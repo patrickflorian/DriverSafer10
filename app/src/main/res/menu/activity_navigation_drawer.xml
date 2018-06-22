@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view"
+
+    >
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_camera"
+            android:checkable="true"
+            android:checked="true"
+            android:icon="@drawable/ic_menu_camera"
+            android:title="Camera Views" />
+
+
+        <item
+            android:id="@+id/nav_destination"
+            android:icon="@drawable/ic_place_black_24dp"
+            android:title="Navigation" />
+        <item
+            android:id="@+id/nav_manage"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="Settings" />
+    </group>
+
+    <item
+        android:title="Communicate"
+        android:visible="true">
+        <menu>
+            <item
+                android:id="@+id/nav_share"
+                android:icon="@drawable/ic_com"
+                android:title="Collaborate" />
+            <item
+                android:id="@+id/nav_send"
+                android:icon="@drawable/ic_menu_share"
+                android:iconTint="@color/colorDriverSafer_error"
+                android:title="Share MyData" />
+        </menu>
+    </item>
+
+</menu>

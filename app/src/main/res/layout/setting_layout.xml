@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialog_rl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/side_nav_bar"
+    android:padding="10dp"
+    tools:context=".Navigation"
+
+    >
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/btn_background_transparent_success"
+        android:drawableRight="@drawable/ic_menu_manage"
+        android:drawableTint="@color/colorDriverSafer_success"
+
+        android:padding="5dp"
+        android:text="SETTINGS"
+        android:textAlignment="center"
+        android:textColor="@color/colorDriverSafer_success"
+        android:textSize="15dp"
+        android:textStyle="bold">
+
+    </TextView>
+
+    <RelativeLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/dialog_title"
+        android:layout_marginTop="20dp">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <CheckBox
+                    android:id="@+id/en_notif"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:background="@drawable/white_border"
+                    android:checked="true"
+                    android:drawableRight="@drawable/ic_notifications_black_24dp"
+                    android:text="Notifications"
+                    android:textAlignment="viewStart"
+                    android:textColor="@color/colorDriverSafer_background" />
+
+                <CheckBox
+                    android:id="@+id/en_col"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:background="@drawable/white_border"
+                    android:checked="true"
+                    android:drawableRight="@drawable/ic_menu_taxi_black"
+                    android:text="enable collaboration in driving mode"
+                    android:textColor="@color/colorDriverSafer_background" />
+
+                <CheckBox
+                    android:id="@+id/en_cam"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:background="@drawable/white_border"
+                    android:checked="true"
+                    android:drawableRight="@drawable/ic_menu_camera"
+                    android:text="enable Camera View"
+                    android:textColor="@color/colorDriverSafer_background" />
+
+                <TextView
+                    android:id="@+id/textView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawableRight="@drawable/ic_search_black_24dp"
+                    android:text="Rayon de detection"
+                    android:textAlignment="center"
+                    android:textColor="@color/colorDriverSafer_background" />
+
+                <SeekBar
+                    android:id="@+id/rayon"
+                    style="@style/Widget.AppCompat.SeekBar.Discrete"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/white_border"
+                    android:max="20"
+                    android:progress="1"
+                    android:textColor="@color/colorDriverSafer_background" />
+
+            </LinearLayout>
+
+
+        </ScrollView>
+
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/content">
+
+        <Button
+            android:id="@+id/dialog_positive_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/btn_background_transparent_success"
+            android:text="SAVE"
+            android:textColor="@color/colorDriverSafer_success" />
+
+        <Button
+            android:id="@+id/dialog_negative_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@id/dialog_positive_btn"
+            android:layout_marginRight="3dp"
+            android:layout_toLeftOf="@id/dialog_positive_btn"
+            android:background="@drawable/btn_background_transparent_error"
+            android:text="CANCEL"
+            android:textColor="@color/colorDriverSafer_error" />
+    </RelativeLayout>
+
+</RelativeLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#b53a2b</color>
+    <color name="colorDriverSafer_success">#3ab52b</color>
+    <color name="colorDriverSafer_error">#b53a2b</color>
+    <color name="colorDriverSafer_warning">#fff500</color>
+    <color name="colorDriverSafer_default">#e51e1e1e</color>
+    <color name="colorDriverSafer_background">#ebebeb</color>
+
+    <color name="black_overlay">#66000000</color>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <!--apply button background transparent, full opacity-->
+            <solid android:color="#203ab52b" />
+            <!--make button border solid color, nontransparent-->
+            <stroke android:width="3dp" android:color="@color/colorDriverSafer_default" />
+            <corners android:radius="6dp" />
+            <padding android:bottom="2dp" android:left="2dp" android:right="2dp" android:top="2dp" />
+            <gradient android:endColor="#000" android:gradientRadius="200dp" android:startColor="#3ab52b" android:type="linear"
+
+                />
+        </shape>
+    </item>
+</selector>

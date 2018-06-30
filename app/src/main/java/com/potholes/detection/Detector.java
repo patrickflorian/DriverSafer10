@@ -27,13 +27,12 @@ public class Detector {
     public static double MAX_POTHOLES_AREA;
     public static double MIN_POTHOLES_AREA;
     public static int Max_obj = 100;
-
+    public static boolean hasfoundPothole = false;
     private static Scalar hsvMin = new Scalar(0, 0, 0);
     private static Scalar hsvMax = new Scalar(50, 50, 250);
 
 
     // function to extract the road part in the image
-
 
     private static Mat extractRoadMask(Mat input) {
 
@@ -138,6 +137,8 @@ public class Detector {
         if (obj_qty > Max_obj) obj_qty = Max_obj;
         if (obj_qty > 1) {
             int contourIdx;
+
+            Detector.hasfoundPothole = true;
             for (contourIdx = 0; contourIdx < obj_qty; contourIdx++) {
 
                 double area = Imgproc.contourArea(contours.get(contourIdx));

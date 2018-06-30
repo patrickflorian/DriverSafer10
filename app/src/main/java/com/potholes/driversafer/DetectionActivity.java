@@ -3,11 +3,9 @@ package com.potholes.driversafer;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,10 +16,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.potholes.View.Dialog.SimpleDialogBuilder;
+import com.potholes.db.Potholes;
 import com.potholes.detection.Detector;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -35,8 +32,10 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
 
     private static final String TAG = "OpenCVCamera";
     private CameraBridgeViewBase cameraBridgeViewBase;
-    private AlertDialog baterryDialog;
 
+
+    private AlertDialog baterryDialog;
+    private AlertDialog potholeDialog;
 
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -53,38 +52,8 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
         }
 
     };
+    private Mat imageMAt;
 
-    boolean isConditionSastified() {
-
-        return false;
-    }
-
-    void initDialog() {
-        LayoutInflater inflater = getLayoutInflater();
-        View alertView = inflater.inflate(R.layout.exit_dialog_layout, null);
-
-        SimpleDialogBuilder dialogBuilder = new SimpleDialogBuilder(this, alertView,
-                "Low Battery level \n please plug on a charger or ", SimpleDialogBuilder.DIALOG_STYLE_DANGER);
-        dialogBuilder.setCancelable(true);
-
-        baterryDialog = dialogBuilder.create();
-
-        dialogBuilder.setPositiveButtonListener("continue", new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                baterryDialog.cancel();
-                finish();
-            }
-        });
-
-        dialogBuilder.setNegativeButtonListener("close", new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                baterryDialog.dismiss();
-                checkBatteryLevel();
-            }
-        });
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,6 +72,39 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
 
         checkBatteryLevel();
 
+    }
+
+
+    void initDialog() {
+        LayoutInflater inflater = getLayoutInflater();
+        View alertView = inflater.inflate(R.layout.exit_dialog_layout, null);
+
+        SimpleDialogBuilder dialogBuilder = new SimpleDialogBuilder(this, alertView,
+                "Low Battery level \n please plug on a charger or ", SimpleDialogBuilder.DIALOG_STYLE_DANGER);
+        dialogBuilder.setCancelable(true);
+
+        baterryDialog = dialogBuilder.create();
+
+        dialogBuilder.setPositiveButtonListener("quitter", new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                baterryDialog.cancel();
+                finish();
+            }
+        });
+
+        dialogBuilder.setNegativeButtonListener("continuer", new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                baterryDialog.dismiss();
+            }
+        });
+    }
+
+    private void showEditBar() {
+        Intent intent = new Intent(DetectionActivity.this, EditActivity.class);
+        intent.putExtra("trou", new Potholes(0, 0, 25.6, true, 225));
+        startActivity(intent);
     }
 
     private int getBatteryLevel() {
@@ -151,7 +153,11 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
 
     @Override
     public void onCameraViewStopped() {
-
+        try {
+            showEditBar();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -160,49 +166,19 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
         Detector.FRAME_HEIGHT = mFinalMat.height();
         Detector.FRAME_WIDTH = mFinalMat.width();
         Detector.MAX_POTHOLES_AREA = (Detector.FRAME_HEIGHT / 4) * (Detector.FRAME_WIDTH / 4);
-        Detector.detect(mFinalMat);
-
-        return mFinalMat;
-/*
-        Imgproc.threshold(mIntermediateMat,mIntermediateMat,0, 255, Imgproc.THRESH_OTSU | Imgproc.THRESH_BINARY);
-
-        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-        Mat hierarchy = new Mat();
-
-// find contours:
-        Imgproc.findContours(mIntermediateMat, contours, hierarchy, Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
-        int obj_qty =contours.size();
-
-        Rect boundRect ;
-        if(obj_qty > Max_obj) obj_qty = Max_obj;
-        if(obj_qty>1  )
-        {
-            int contourIdx;
-            for (contourIdx= 0; contourIdx < obj_qty ; contourIdx++) {
-
-                double area = Imgproc.contourArea(contours.get(contourIdx));
-                if (area > MIN_POTHOLES_AREA && area < MAX_POTHOLES_AREA )
-                {
-                    MatOfPoint2f         approxCurve = new MatOfPoint2f();
-
-                    MatOfPoint2f contour2f = new MatOfPoint2f( contours.get(contourIdx).toArray() );
-                    double approxDistance = Imgproc.arcLength(contour2f, true)*0.02;
-
-
-                    Imgproc.approxPolyDP(contour2f, approxCurve, approxDistance, true);
-
-                    MatOfPoint points = new MatOfPoint( approxCurve.toArray() );
-                    // Get bounding rect of contour
-                    boundRect = Imgproc.boundingRect(points);
-                    Imgproc.rectangle(mFinalMat, new Point(boundRect.x,boundRect.y), new Point(boundRect.x+boundRect.width,boundRect.y+boundRect.height),new Scalar(255,0,0));
-                    Imgproc.drawContours(mFinalMat, contours, contourIdx, new Scalar(0, 0, 255), -1);
-                }
-            }
+        if (!Detector.hasfoundPothole) {
+            Detector.detect(mFinalMat);
+        } else {
+            cameraBridgeViewBase.disableView();
         }
 
-}
-*/
+        imageMAt = mFinalMat.clone();
+        return mFinalMat;
+
     }
+
+
+
 
 
 }

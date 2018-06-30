@@ -20,6 +20,7 @@
         android:padding="5dp"
         android:text="Edit potholes"
         android:textAlignment="center"
+        android:textColor="@color/common_google_signin_btn_text_dark_focused"
         android:textSize="15dp"
         android:textStyle="bold">
 

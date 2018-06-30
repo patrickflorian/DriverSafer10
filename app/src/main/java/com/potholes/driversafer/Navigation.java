@@ -1,31 +1,29 @@
 package com.potholes.driversafer;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
-import android.content.IntentSender;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.Looper;
-import android.content.ContextWrapper;
-import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.widget.LinearLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -36,50 +34,38 @@ import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.potholes.View.Dialog.EditPotholesDialog;
 import com.potholes.View.Dialog.SettingDialogBuilder;
 import com.potholes.View.Dialog.SimpleDialogBuilder;
-import com.potholes.View.Markers.CustomInfoWindowAdapter;
+import com.potholes.View.Map.CustomInfoWindowAdapter;
+import com.potholes.View.Map.Retriever;
+import com.potholes.View.Map.Road;
 import com.potholes.db.HttpHandler;
 import com.potholes.db.Potholes;
 import com.potholes.db.Settings;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -100,6 +86,7 @@ public class Navigation extends AppCompatActivity
     private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(
             new LatLng(-40, -168), new LatLng(71, 136));
     private static final String TAG = "NavigationActivity";
+    private static final LatLng DEFAULT_LAT_LNG = new LatLng(5.3491364, 10.423561);
     public Bundle bundleSavedInstance;
     private List<Potholes> potholes_list = new ArrayList<Potholes>();
     //widgets
@@ -127,9 +114,14 @@ public class Navigation extends AppCompatActivity
 
     private AsyncTask mPotholesEditTask;
     private Boolean navigation_mode = false;
-    private LocationUpdateManager myLocationManager;
     private AlertDialog baterryDialog;
-
+    private BroadcastReceiver mLocationUpdateMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Location location = intent.getParcelableExtra(GeoLocationService.LOCATION_DATA);
+            //SEND LOCATION TO YOUR API HERE
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,10 +129,6 @@ public class Navigation extends AppCompatActivity
         super.onCreate(savedInstanceState);
         this.bundleSavedInstance = savedInstanceState;
         setContentView(R.layout.activity_navigation);
-
-
-        myLocationManager = new LocationUpdateManager();
-        myLocationManager.startLocationUpdates();
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
 
         bottom_bar = findViewById(R.id.bottom_bar);
@@ -193,20 +181,14 @@ public class Navigation extends AppCompatActivity
         ic_magnify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                PotholesRetriever my_pr = new PotholesRetriever();
-                my_pr.execute();
+                if (lastLocation != null) {
+                    Retriever my_pr = new Retriever();
+                    my_pr.findPotholesOn(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude()), Settings.getRayonDetection(), mMap);
+                }
             }
         });
         initBatteryDialog();
         checkBatteryLevel();
-//        FloatingActionButton setting_btn = findViewById(R.id.settings_btn);
-//        setting_btn.setOnClickListener(new View.OnClickListener(){
-//
-//            @Override
-//            public void onClick(View view) {
-//                editSettings();
-//            }
-//        });
 
 
     }
@@ -248,13 +230,7 @@ public class Navigation extends AppCompatActivity
                 mMap.getUiSettings().setMapToolbarEnabled(false);
                 mMap.getUiSettings().setCompassEnabled(false);
 
-                mMap.setOnCameraMoveListener(new GoogleMap.OnCameraMoveListener() {
-                    @Override
-                    public void onCameraMove() {
-
-                    }
-                });
-                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                mMap.setOnMapClickListener(new OnMapClickListener() {
                     @Override
                     public void onMapClick(LatLng latLng) {
                         if (placesearchLayout.getAlpha() == 0) {
@@ -265,6 +241,12 @@ public class Navigation extends AppCompatActivity
                     }
                 });
 
+                mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                    @Override
+                    public void onMapLongClick(LatLng latLng) {
+                        editPotholes(new Potholes(latLng.latitude, latLng.longitude));
+                    }
+                });
                 mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
@@ -281,11 +263,13 @@ public class Navigation extends AppCompatActivity
                     @Override
                     public void onMarkerDrag(Marker marker) {
 
-
                     }
 
                     @Override
                     public void onMarkerDragEnd(Marker marker) {
+                        LatLng pos = marker.getPosition();
+                        destLocation.setLatitude(pos.latitude);
+                        destLocation.setLongitude(pos.longitude);
                         if (marker.getTitle().equals("Arrivée")) {
                             drawRoads();
 
@@ -293,7 +277,34 @@ public class Navigation extends AppCompatActivity
                     }
                 });
 
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(5.3491364, 10.423561)));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(DEFAULT_LAT_LNG));
+                final Marker carMarker = mMap.addMarker(new MarkerOptions()
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_car))
+                        .position(DEFAULT_LAT_LNG)
+                        .title("Driver Car")
+                        .snippet("Lat : " + String.valueOf(DEFAULT_LAT_LNG.latitude) + "\n"
+                                + "Lng : " + String.valueOf(DEFAULT_LAT_LNG.longitude) + "\n"
+                                + "Vitesse : " + "not yet moving" + "\n"
+                                + "Hour : " + DateFormat.getTimeInstance().format(new Date()) + "\n")
+                );
+
+
+                BroadcastReceiver broadcastReceiverForMap = new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        lastLocation = intent.getParcelableExtra(GeoLocationService.LOCATION_DATA);
+                        LatLng cur_pos = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+                        carMarker.setPosition(cur_pos);
+                        carMarker.setSnippet("Lat : " + String.valueOf(cur_pos.latitude) + "\n"
+                                + "Lng : " + String.valueOf(cur_pos.longitude) + "\n"
+                                + "Vitesse : " + lastLocation.getSpeed() + " m/s" + "\n"
+                                + "Hour : " + DateFormat.getTimeInstance().format(new Date(lastLocation.getTime())) + "\n");
+                        mMap.animateCamera(CameraUpdateFactory.newLatLng(cur_pos));
+                    }
+                };
+                LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiverForMap,
+                        new IntentFilter(GeoLocationService.LOCATION_UPDATE));
+
                 init();
 
             }
@@ -303,8 +314,9 @@ public class Navigation extends AppCompatActivity
     }
 
     private void drawRoads() {
+        Road r = new Road(this, mMap);
+        r.findAndDrawRoadOnMap(startLocation.getLatitude(), startLocation.getLongitude(), destLocation.getLatitude(), destLocation.getLongitude());
     }
-
 
     void checkBatteryLevel() {
         if (getBatteryLevel() < 20) {
@@ -320,6 +332,25 @@ public class Navigation extends AppCompatActivity
         } else {
             confirmExit();
         }
+    }
+
+    public String getDistance(LatLng my_latlong, LatLng frnd_latlong) {
+        Location l1 = new Location("One");
+        l1.setLatitude(my_latlong.latitude);
+        l1.setLongitude(my_latlong.longitude);
+
+        Location l2 = new Location("Two");
+        l2.setLatitude(frnd_latlong.latitude);
+        l2.setLongitude(frnd_latlong.longitude);
+
+        float distance = l1.distanceTo(l2);
+        String dist = distance + " M";
+
+        if (distance > 1000.0f) {
+            distance = distance / 1000.0f;
+            dist = distance + " KM";
+        }
+        return dist;
     }
 
     private void confirmExit() {
@@ -349,10 +380,7 @@ public class Navigation extends AppCompatActivity
             }
         });
         dialog.show();
-
-
     }
-
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -367,18 +395,15 @@ public class Navigation extends AppCompatActivity
 
         } else if (id == R.id.nav_destination) {
             if (item.getTitle().toString().equals("Navigation")) {
+
                 navigation_mode = false;
-                updateLocation();
                 item.setTitle("Stop Navigation");
-                myLocationManager.startLocationUpdates();
                 addNavigationsWidgets();
                 mSearchText.setVisibility(View.VISIBLE);
                 mSearchText.setEnabled(true);
             } else {
                 item.setTitle("Navigation");
                 if (mMap != null) mMap.clear();
-                myLocationManager.stopLocationUpdates();
-                lastLocation = myLocationManager.mCurrentLocation;
                 navigation_mode = true;
                 mSearchText.setVisibility(View.INVISIBLE);
                 mSearchText.setEnabled(false);
@@ -559,7 +584,11 @@ public class Navigation extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 Log.d(TAG, "onClick: clicked gps icon");
-                getDeviceLocation();
+                try {
+                    getDeviceLocation();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -606,7 +635,7 @@ public class Navigation extends AppCompatActivity
 
     }
 
-    private void getDeviceLocation() {
+    private void getDeviceLocation() throws Exception {
         Log.d(TAG, "getDeviceLocation: getting the devices current location");
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         try {
@@ -624,7 +653,6 @@ public class Navigation extends AppCompatActivity
                                     moveCamera(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude()),
                                             DEFAULT_ZOOM,
                                             "My Location");
-                                    updateMylocationMarker();
                                 } catch (NullPointerException e) {
                                     e.printStackTrace();
                                 }
@@ -646,7 +674,7 @@ public class Navigation extends AppCompatActivity
 
     private void moveCamera(LatLng latLng, float zoom, String title) {
         Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
         if (!title.equals("My Location")) {
             MarkerOptions options = new MarkerOptions()
@@ -712,20 +740,6 @@ public class Navigation extends AppCompatActivity
         }
     }
 
-    void updateMylocationMarker() {
-
-
-        Marker marker = mMap.addMarker(new MarkerOptions()
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_car))
-                .position(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude()))
-                .title("Driver Car")
-                .snippet("Lat : " + lastLocation.getLatitude() + "\n"
-                        + "Lng : " + lastLocation.getLongitude() + "\n"
-                        + "Vitesse : " + lastLocation.getSpeed() + "\n"
-                        + "Hour : " + DateFormat.getTimeInstance().format(new Date(lastLocation.getTime())) + "\n")
-        );
-    }
-
     private void hideSoftKeyboard() {
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
     }
@@ -736,40 +750,20 @@ public class Navigation extends AppCompatActivity
     }
 
     @Override
-    public void onResume() {
+    protected void onResume() {
         super.onResume();
-
-        // Resuming location updates depending on button state and
-        // allowed permissions
-        if (myLocationManager.mRequestingLocationUpdates && myLocationManager.checkPermissions()) {
-            myLocationManager.startLocationUpdates();
-        }
-
-        //updateLocationUI();
+        GeoLocationService.activity = Navigation.this;
+        GeoLocationService.start(this);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mLocationUpdateMessageReceiver,
+                new IntentFilter(GeoLocationService.LOCATION_UPDATE));
     }
 
-    public void updateLocation() {
-        if (navigation_mode) {
-            if (myLocationManager.mCurrentLocation != null)
-                lastLocation = myLocationManager.mCurrentLocation;
-        } else {
-            getDeviceLocation();
-        }
-    }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean("is_requesting_updates", myLocationManager.mRequestingLocationUpdates);
-        outState.putParcelable("last_known_location", myLocationManager.mCurrentLocation);
-        outState.putString("last_updated_on", myLocationManager.mLastUpdateTime);
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        myLocationManager.stopLocationUpdates();
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationUpdateMessageReceiver);
+        GeoLocationService.stop(this);
+        super.onPause();
     }
 
     private int getBatteryLevel() {
@@ -811,8 +805,6 @@ public class Navigation extends AppCompatActivity
                     .position(new LatLng(destLocation.getLatitude() + 0.3, destLocation.getLongitude() + 0.3))
                     .snippet("Your Trajet will End here")
                     .title("Arrivée")
-                    .rotation(-60)
-                    .flat(true)
             );
 
 
@@ -848,6 +840,8 @@ public class Navigation extends AppCompatActivity
                 }
             });
 
+            Road r = new Road(this, mMap);
+            r.findAndDrawRoadOnMap(startLocation.getLatitude(), startLocation.getLongitude(), destLocation.getLatitude(), destLocation.getLongitude());
 
         } catch (NullPointerException e) {
             e.printStackTrace();
@@ -855,120 +849,7 @@ public class Navigation extends AppCompatActivity
 
     }
 
-    private class PotholesRetriever extends AsyncTask<Void, Void, Void> {
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            Toast.makeText(getApplicationContext(), "starting retrieving", Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            if (lastLocation != null) {
-                HttpHandler sh = new HttpHandler("GET");
-                // Making a request to url and getting response
-                String url = "http://192.168.43.108/potholes/app/findPotholes.php?lat=" + lastLocation.getLatitude() +
-                        "&lng=" + lastLocation.getLongitude() +
-                        "&rayon=" + Settings.getRayonDetection();
-                String jsonStr = sh.makeServiceCall(url);
-
-                Log.d(TAG, "Response from url: " + jsonStr);
-                if (jsonStr != null) {
-                    try {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mMap.clear();
-                                mMap.addCircle(new CircleOptions()
-                                        .radius(Settings.getRayonDetection() * 1000)
-                                        .fillColor(R.color.colorDriverSafer_warning)
-                                        .center(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude()))
-                                        .strokeColor(R.color.colorDriverSafer_warning)
-
-                                );
-                                updateMylocationMarker();
-                            }
-                        });
-
-                        JSONObject jsonObjet = new JSONObject(jsonStr);
-                        JSONArray list = jsonObjet.getJSONArray("list");
-                        // looping through All Contacts
-                        int count = jsonObjet.getInt("count");
-                        if (list != null) {
-                            // Getting JSON Array node
-
-                            for (int i = 0; i < list.length(); i++) {
-
-                                JSONObject jsonObj = list.getJSONObject(i);
-                                final Double surface = jsonObj.getDouble("surface");
-                                final Double profondeur = jsonObj.getDouble("profondeur");
-                                final int pothole_id = jsonObj.getInt("id");
-                                final Boolean etat = jsonObj.getBoolean("etat");
-
-                                //retrieve lat and long of potholes
-
-                                JSONObject pos = jsonObj.getJSONObject("position");
-                                final double lng = pos.getDouble("lng");
-                                final double lat = pos.getDouble("lat");
-
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mMap.addMarker(new MarkerOptions()
-                                                .position(new LatLng(lat, lng))
-                                                .title("Potholes")
-                                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
-                                                .snippet("ID :" + pothole_id + "\n" +
-                                                        "Surface : " + surface + "\n" +
-                                                        "Profondeur : " + profondeur + "\n" +
-                                                        "Etat : " + etat + "\n"
-                                                )
-                                        ).setTag(new Potholes(pothole_id, lat, lng, surface, etat, profondeur));
-                                    }
-                                });
-
-
-                            }
-                        }
-                        // tmp hash map for single contact
-
-                    } catch (final JSONException e) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(getApplicationContext(),
-                                        "Json parsing error: " + e.getMessage(),
-                                        Toast.LENGTH_LONG).show();
-                            }
-                        });
-                        return null;
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                } else {
-                    Log.e(TAG, "Couldn't get json from server.");
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getApplicationContext(),
-                                    "Couldn't get json from server. Check LogCat for possible errors!",
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
-                    return null;
-                }
-            }
-            return null;
-        }
-    }
 
     private class EditPotholesTask extends AsyncTask<Void, Void, Void> {
         Potholes p;
@@ -982,7 +863,7 @@ public class Navigation extends AppCompatActivity
         protected Void doInBackground(Void... voids) {
             HttpHandler sh = new HttpHandler("GET");
             // Making a request to url and getting response
-            String url = "http://192.168.43.108/potholes/app/editPotholes.php?id=" + p.getId() +
+            String url = "http://192.168.43.193/potholes/app/editPotholes.php?id=" + p.getId() +
                     "&lng=" + p.getLng() +
                     "&lat=" + p.getLat() +
                     "&surface=" + p.getSurface() +
@@ -1009,160 +890,6 @@ public class Navigation extends AppCompatActivity
         }
     }
 
-    public class LocationUpdateManager {
-
-        // location updates interval - 10sec
-        private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 1000;
-        // fastest updates interval - 5 sec
-        // location updates will be received if another app is requesting the locations
-        // than your app can handle
-        private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 500;
-        private static final int REQUEST_CHECK_SETTINGS = 100;
-        public Location mCurrentLocation;
-        // location last updated time
-        private String mLastUpdateTime;
-        // bunch of location related apis
-        private FusedLocationProviderClient mFusedLocationClient;
-        private SettingsClient mSettingsClient;
-        private LocationRequest mLocationRequest;
-        private LocationSettingsRequest mLocationSettingsRequest;
-        private LocationCallback mLocationCallback;
-        // boolean flag to toggle the ui
-        private Boolean mRequestingLocationUpdates;
-
-        LocationUpdateManager() {
-            // initialize the necessary libraries
-            initClient();
-
-            // restore the values from saved instance state
-            restoreValuesFromBundle(bundleSavedInstance);
-        }
-
-        private void initClient() {
-            mFusedLocationClient = LocationServices.getFusedLocationProviderClient(Navigation.this);
-            mSettingsClient = LocationServices.getSettingsClient(Navigation.this);
-
-            mLocationCallback = new LocationCallback() {
-                @Override
-                public void onLocationResult(LocationResult locationResult) {
-                    super.onLocationResult(locationResult);
-                    // location is received
-                    mCurrentLocation = locationResult.getLastLocation();
-                    mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
-                    updateLocation();
-                    updateMylocationMarker();
-                    if (navigation_mode) new PotholesRetriever().execute();
-
-                }
-            };
-
-            mRequestingLocationUpdates = false;
-
-            mLocationRequest = new LocationRequest();
-            mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
-            mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
-            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-            builder.addLocationRequest(mLocationRequest);
-            mLocationSettingsRequest = builder.build();
-        }
-
-        private void restoreValuesFromBundle(Bundle savedInstanceState) {
-            if (savedInstanceState != null) {
-                if (savedInstanceState.containsKey("is_requesting_updates")) {
-                    mRequestingLocationUpdates = savedInstanceState.getBoolean("is_requesting_updates");
-                }
-
-                if (savedInstanceState.containsKey("last_known_location")) {
-                    mCurrentLocation = savedInstanceState.getParcelable("last_known_location");
-                }
-
-                if (savedInstanceState.containsKey("last_updated_on")) {
-                    mLastUpdateTime = savedInstanceState.getString("last_updated_on");
-                }
-            }
-
-            //updateLocationUI();
-        }
-
-        /**
-         * Starting location updates
-         * Check whether location settings are satisfied and then
-         * location updates will be requested
-         */
-        private void startLocationUpdates() {
-            mSettingsClient
-                    .checkLocationSettings(mLocationSettingsRequest)
-                    .addOnSuccessListener(Navigation.this, new OnSuccessListener<LocationSettingsResponse>() {
-                        @SuppressLint("MissingPermission")
-                        @Override
-                        public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                            Log.i(TAG, "All location settings are satisfied.");
-
-                            Toast.makeText(getApplicationContext(), "Started location updates!", Toast.LENGTH_SHORT).show();
-
-                            //noinspection MissingPermission
-                            mFusedLocationClient.requestLocationUpdates(mLocationRequest,
-                                    mLocationCallback, Looper.myLooper());
-                            mRequestingLocationUpdates = true;
-
-                            //updateLocationUI();
-                        }
-                    })
-                    .addOnFailureListener(Navigation.this, new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            int statusCode = ((ApiException) e).getStatusCode();
-                            switch (statusCode) {
-                                case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                                    Log.i(TAG, "Location settings are not satisfied. Attempting to upgrade " +
-                                            "location settings ");
-                                    try {
-                                        // Show the dialog by calling startResolutionForResult(), and check the
-                                        // result in onActivityResult().
-                                        ResolvableApiException rae = (ResolvableApiException) e;
-                                        rae.startResolutionForResult(Navigation.this, REQUEST_CHECK_SETTINGS);
-                                    } catch (IntentSender.SendIntentException sie) {
-                                        Log.i(TAG, "PendingIntent unable to execute request.");
-                                    }
-                                    break;
-                                case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                                    String errorMessage = "Location settings are inadequate, and cannot be " +
-                                            "fixed here. Fix in Settings.";
-                                    Log.e(TAG, errorMessage);
-
-                                    Toast.makeText(Navigation.this, errorMessage, Toast.LENGTH_LONG).show();
-                            }
-
-                            //updateLocationUI();
-                        }
-                    });
-        }
-
-        public void stopLocationUpdates() {
-            mRequestingLocationUpdates = false;
-
-            // Removing location updates
-            mFusedLocationClient
-                    .removeLocationUpdates(mLocationCallback)
-                    .addOnCompleteListener(Navigation.this, new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            Toast.makeText(getApplicationContext(), "Location updates stopped!", Toast.LENGTH_SHORT).show();
-                            //toggleButtons();
-                        }
-                    });
-
-        }
-
-        private boolean checkPermissions() {
-            int permissionState = ActivityCompat.checkSelfPermission(Navigation.this,
-                    Manifest.permission.ACCESS_FINE_LOCATION);
-            return permissionState == PackageManager.PERMISSION_GRANTED;
-        }
-
-    }
     /*boolean isCharging(){
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         Intent batteryStatus = getApplicationContext().registerReceiver(null, ifilter);

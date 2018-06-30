@@ -36,7 +36,7 @@ import org.json.JSONObject;
 public class LoginActivity extends AppCompatActivity {
 
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "LoginActivity";
     private static final int ERROR_DIALOG_REQUEST = 9001;
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide

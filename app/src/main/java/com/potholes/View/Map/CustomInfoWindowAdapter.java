@@ -1,6 +1,7 @@
-package com.potholes.View.Markers;
+package com.potholes.View.Map;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -44,9 +45,21 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
 
         if (title.equals("Potholes")) {
             info_img.setImageResource(R.drawable.ic_info_potholes);
+            tvTitle.setBackgroundColor(Color.YELLOW);
+            tvTitle.setTextColor(Color.BLACK);
         }
         if (title.equals("Driver Car")) {
             info_img.setImageResource(R.drawable.ic_map_car);
+            tvTitle.setBackgroundColor(Color.BLACK);
+            tvTitle.setTextColor(Color.YELLOW);
+        }
+        if (title.equals("Point de Départ du trajet")) {
+            info_img.setImageResource(R.drawable.ic_start);
+            tvTitle.setBackgroundColor(Color.RED);
+        }
+        if (title.equals("Arrivée")) {
+            info_img.setImageResource(R.drawable.ic_arrival);
+            tvTitle.setBackgroundColor(Color.BLUE);
         }
 
     }

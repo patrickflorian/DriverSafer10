@@ -1,10 +1,12 @@
-package com.potholes.driversafer;
+package com.potholes.View.Dialog;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+
+import com.potholes.driversafer.R;
 
 /**
  * Created by Lelouch on 27/05/2018.

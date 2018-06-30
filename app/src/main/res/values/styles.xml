@@ -29,4 +29,9 @@
         <item name="android:background">@color/black_overlay</item>
     </style>
 
+    <style name="DriverSafer" parent="Theme.AppCompat.NoActionBar">
+        <item name="colorAccent">@color/colorDriverSafer_warning</item>
+        <item name="android:statusBarColor">#8c820f</item>
+    </style>
+
 </resources>

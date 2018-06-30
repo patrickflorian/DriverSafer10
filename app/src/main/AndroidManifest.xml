@@ -41,7 +41,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
+        android:theme="@style/DriverSafer">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
@@ -51,7 +51,7 @@
 
         <activity
             android:name=".LoginActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/DriverSafer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -61,13 +61,20 @@
         <activity
             android:name=".DetectionActivity"
             android:configChanges="keyboardHidden|orientation"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:screenOrientation="portrait"
+            android:theme="@style/DriverSafer" />
         <activity
             android:name=".Navigation"
-            android:screenOrientation="landscape"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/DriverSafer">
 
+        </activity>
+
+        <service
+            android:name=".GeoLocationService"
+            android:exported="false" />
+        <activity android:name=".Navigate">
+
+        </activity>
     </application>
 
 </manifest>

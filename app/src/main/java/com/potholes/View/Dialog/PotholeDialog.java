@@ -1,30 +1,17 @@
 package com.potholes.View.Dialog;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.widget.*;
-import android.graphics.Bitmap;
-import android.support.design.widget.TextInputEditText;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.potholes.db.Potholes;
-import com.potholes.driversafer.DetectionActivity;
-import com.potholes.driversafer.R;
-
-import android.app.Activity;
-
-import org.opencv.android.CameraBridgeViewBase;
+import com.potholes.db.local.potholes.Potholes;
 
 /**
  * Created by Lelouch on 24/06/2018.

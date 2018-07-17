@@ -29,6 +29,7 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.potholes.View.Dialog.RegistrationDialogBuilder;
 import com.potholes.db.Account;
 import com.potholes.db.HttpHandler;
+import com.potholes.db.Settings;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -317,7 +318,7 @@ public class LoginActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... arg0) {
             HttpHandler sh = new HttpHandler("GET");
             // Making a request to url and getting response
-            String url = "http://192.168.43.193/potholes/app/account.php?login=" + login.getText().toString() + "&pass=" + password.getText().toString();
+            String url = "http://" + Settings.SERVER_IP + "/potholes/app/account.php?login=" + login.getText().toString() + "&pass=" + password.getText().toString();
             String jsonStr = sh.makeServiceCall(url);
 
             Log.e(TAG, "Response from url: " + jsonStr);
@@ -440,7 +441,7 @@ public class LoginActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... arg0) {
             HttpHandler sh = new HttpHandler("GET");
             // Making a request to url and getting response
-            String url = "http://192.168.43.193/potholes/app/register.php?email=" +
+            String url = "http://" + Settings.SERVER_IP + "/potholes/app/register.php?email=" +
                     email + "&pass=" +
                     pass + "&cni=" +
                     cni + "&nom=" +

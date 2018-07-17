@@ -6,9 +6,8 @@ import android.support.design.widget.TextInputEditText;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Switch;
 
-import com.potholes.db.Potholes;
+import com.potholes.db.local.potholes.Potholes;
 import com.potholes.driversafer.R;
 
 /**
@@ -16,11 +15,9 @@ import com.potholes.driversafer.R;
  */
 
 public class EditPotholesDialog extends AlertDialog.Builder {
-    public Switch etat_view;
     public TextInputEditText lat_view;
     public TextInputEditText lng_view;
     public TextInputEditText surface_view;
-    public TextInputEditText prof_view;
     public Potholes potholes;
     private View dialogView;
     private Button positive_button;
@@ -31,19 +28,19 @@ public class EditPotholesDialog extends AlertDialog.Builder {
         super(context);
         dialogView = view;
 
-        etat_view = view.findViewById(R.id.etat);
+
         lat_view = view.findViewById(R.id.lat);
         lng_view = view.findViewById(R.id.lng);
         surface_view = view.findViewById(R.id.surface);
-        prof_view = view.findViewById(R.id.profondeur);
+
         this.potholes = p;
 
         //init all fields contains
-        etat_view.setChecked(!p.isEtat());
+
         lat_view.setText(String.valueOf(p.getLat()));
         lng_view.setText(String.valueOf(p.getLng()));
         surface_view.setText(String.valueOf(p.getSurface()));
-        prof_view.setText(String.valueOf(p.getProfondeur()));
+
 
         positive_button = view.findViewById(R.id.dialog_positive_btn);
         negative_button = view.findViewById(R.id.dialog_negative_btn);
@@ -72,7 +69,7 @@ public class EditPotholesDialog extends AlertDialog.Builder {
         lat_view.setError(null);
         lng_view.setError(null);
         surface_view.setError(null);
-        prof_view.setError(null);
+
 
         String lat;
         String lng;
@@ -84,7 +81,7 @@ public class EditPotholesDialog extends AlertDialog.Builder {
         lat = (lat_view.getText().toString());
         lng = (lng_view.getText().toString());
         surface = (surface_view.getText().toString());
-        profondeur = (prof_view.getText().toString());
+
 
         View focusView = null;
         boolean cancel = false;
@@ -106,12 +103,6 @@ public class EditPotholesDialog extends AlertDialog.Builder {
             focusView = surface_view;
             cancel = true;
         }
-        //check valid lng
-        if (TextUtils.isEmpty(profondeur)) {
-            prof_view.setError(getContext().getString(R.string.error_field_required));
-            focusView = prof_view;
-            cancel = true;
-        }
 
         if (cancel) {
             // There was an error; don't attempt login and focus the first
@@ -121,11 +112,11 @@ public class EditPotholesDialog extends AlertDialog.Builder {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             cancel = false;
-            potholes.setEtat(!etat_view.isChecked());
+
             potholes.setLat(Double.valueOf(lat));
             potholes.setLng(Double.valueOf(lng));
             potholes.setSurface(Double.valueOf(surface));
-            potholes.setProfondeur(Double.valueOf(profondeur));
+
         }
         return cancel;
     }

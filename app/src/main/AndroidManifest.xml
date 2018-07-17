@@ -9,7 +9,10 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
+    <!-- To auto-complete the email text field in the login form with the user's emails -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_PROFILE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true"
@@ -30,10 +33,7 @@
         android:name="android.hardware.camera.front.autofocus"
         android:required="false" />
 
-    <!-- To auto-complete the email text field in the login form with the user's emails -->
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.READ_PROFILE" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
 
     <application
         android:allowBackup="true"
@@ -54,27 +54,24 @@
             android:theme="@style/DriverSafer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".DetectionActivity"
             android:configChanges="keyboardHidden|orientation"
-            android:screenOrientation="portrait"
+            android:screenOrientation="landscape"
             android:theme="@style/DriverSafer" />
         <activity
             android:name=".Navigation"
             android:theme="@style/DriverSafer">
-
         </activity>
-
+        <activity
+            android:name=".EditActivity"
+            android:theme="@style/DriverSafer" />
         <service
             android:name=".GeoLocationService"
             android:exported="false" />
-        <activity android:name=".Navigate">
-
-        </activity>
     </application>
 
 </manifest>

@@ -14,13 +14,15 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.potholes.db.Distance;
 import com.potholes.db.HttpHandler;
-import com.potholes.db.Potholes;
+import com.potholes.db.local.potholes.Potholes;
+import com.potholes.db.local.potholes.PotholesDB;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -83,7 +85,7 @@ public class Road {
 
     private void findAndDrawRoadPotholes(List<LatLng> road) {
         List<Potholes> plist = new ArrayList<Potholes>();
-        Retriever r = new Retriever();
+        Retriever r = new Retriever(context);
 
         for (int i = 0; i < road.size() - 1; i++) {
             LatLng s = road.get(i), e = road.get(i + 1);
@@ -91,7 +93,34 @@ public class Road {
             try {
                 float[] dist = new float[2];
                 Location.distanceBetween(s.latitude, s.longitude, e.latitude, e.longitude, dist);
-                r.findPotholesOn(new LatLngBounds(s, e).getCenter(), Distance.toKiloMeter(dist[0] / 2), map);
+                LatLng center = new LatLngBounds(s, e).getCenter();
+                r.findPotholesOn();
+
+                //Création d'une instance de ma classe PotholesDB
+                PotholesDB potholesDB = new PotholesDB(context);
+                //On ouvre la base de données pour écrire dedans
+                potholesDB.open();
+                //On insère le trou que l'on vient de recuperer
+                List<Potholes> list = potholesDB.getPotholes();
+                if (list != null) {
+                    for (int j = 0; j < list.size(); j++) {
+                        Potholes p = list.get(j);
+                        float[] dist_2 = new float[2];
+                        Location.distanceBetween(center.latitude, center.longitude, p.getLat(), p.getLng(), dist_2);
+                        if (dist_2[0] <= dist[0]) map.addMarker(new MarkerOptions()
+                                .position(new LatLng(p.getLat(), p.getLng()))
+                                .title("Potholes")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                                .snippet("ID :" + p.getId() + "\n" +
+                                        "Surface : " + p.getSurface() + "\n"
+                                )
+                        ).setTag(p);
+
+                    }
+                } else {
+                    Toast.makeText(context, "vide", Toast.LENGTH_SHORT).show();
+                }
+                potholesDB.close();
             } catch (IllegalArgumentException ex) {
                 Log.e(TAG, "gtRoadPotholes: " + ex.getMessage());
             }

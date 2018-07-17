@@ -41,45 +41,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <android.support.design.widget.TextInputLayout
-                    android:id="@+id/confirm_layout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-
-                    android:layout_marginTop="1mm"
-                    android:background="@drawable/white_border">
-
-                    <Switch
-                        android:id="@+id/etat"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:fontFamily="sans-serif"
-                        android:showText="true"
-                        android:splitTrack="false"
-                        android:switchPadding="10dp"
-                        android:text="Etat du nid de poule"
-                        android:textColor="@color/colorDriverSafer_background"
-                        android:textOff="ouvert"
-                        android:textOn="fermé"
-                        android:textStyle="bold"
-                        android:thumbTint="@color/colorDriverSafer_warning"
-                        android:trackTint="@color/colorDriverSafer_error"
-                        tools:checked="true" />
-
-                    <TextView
-
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="3dp"
-                        android:layout_marginRight="5dp"
-                        android:gravity="right"
-                        android:labelFor="@+id/name"
-                        android:text="configurer l'etat actuel du potholes"
-                        android:textAlignment="gravity"
-                        android:textColor="#8f9c90"
-                        android:textSize="10dp" />
-                </android.support.design.widget.TextInputLayout>
 
                 <android.support.design.widget.TextInputLayout
                     android:id="@+id/name_layout"
@@ -183,39 +144,6 @@
                         android:textSize="10dp" />
                 </android.support.design.widget.TextInputLayout>
 
-                <android.support.design.widget.TextInputLayout
-                    android:id="@+id/pass_layout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/cni_layout"
-                    android:layout_marginTop="1mm"
-                    android:background="@drawable/white_border">
-
-                    <android.support.design.widget.TextInputEditText
-                        android:id="@+id/profondeur"
-                        style="@style/Base.ThemeOverlay.AppCompat.Light"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawableEnd="@drawable/ic_mode_edit"
-                        android:hint="Profondeur"
-                        android:inputType="text|textVisiblePassword"
-                        android:selectAllOnFocus="true"
-                        android:singleLine="true"
-                        android:textColor="@color/colorDriverSafer_background"
-                        android:textColorHint="@color/colorDriverSafer_background" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="3dp"
-                        android:layout_marginRight="5dp"
-                        android:gravity="right"
-                        android:labelFor="@+id/name"
-                        android:text="profondeur du nid de poule"
-                        android:textAlignment="gravity"
-                        android:textColor="#8f9c90"
-                        android:textSize="10dp" />
-                </android.support.design.widget.TextInputLayout>
 
             </RelativeLayout>
         </ScrollView>

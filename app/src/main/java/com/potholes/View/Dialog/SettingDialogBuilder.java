@@ -2,14 +2,10 @@ package com.potholes.View.Dialog;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.os.AsyncTask;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.SeekBar;
 
 import com.potholes.db.Settings;
 import com.potholes.driversafer.R;
@@ -20,14 +16,8 @@ import com.potholes.driversafer.R;
 
 public class SettingDialogBuilder extends AlertDialog.Builder {
 
-    public static Button positive_button;
     public static Button negative_button;
     public static CheckBox notif_cb;
-    public static CheckBox collaborate_cb;
-    public static CheckBox camera_cb;
-    public static SeekBar rayon_sb;
-
-    private AsyncTask mRegistrationTask;
     private View dialogView;
 
 
@@ -35,7 +25,6 @@ public class SettingDialogBuilder extends AlertDialog.Builder {
         super(context);
         dialogView = view;
 
-        positive_button = view.findViewById(R.id.dialog_positive_btn);
         negative_button = view.findViewById(R.id.dialog_negative_btn);
 
         notif_cb = view.findViewById(R.id.en_notif);
@@ -47,56 +36,12 @@ public class SettingDialogBuilder extends AlertDialog.Builder {
             }
         });
 
-        collaborate_cb = view.findViewById(R.id.en_col);
-        collaborate_cb.setChecked(Settings.isCollaborate_enabled());
-        collaborate_cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                Settings.setCollaborate_enabled(b);
-            }
-        });
-
-        camera_cb = view.findViewById(R.id.en_cam);
-        camera_cb.setChecked(Settings.isCamera_enabled());
-        camera_cb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                Settings.setCamera_enabled(b);
-            }
-        });
-
-        rayon_sb = view.findViewById(R.id.rayon);
-        rayon_sb.setProgress((int) Settings.getRayonDetection());
-        rayon_sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                Settings.setRayonDetection(i);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-
-        });
-
     }
 
     public void setNegativeButtonListener(String label, View.OnClickListener onClickListener) {
         negative_button.setOnClickListener(onClickListener);
         negative_button.setText(label);
     }
-
-    public void setPositiveButtonListener(String label, View.OnClickListener onClickListener) {
-        positive_button.setOnClickListener(onClickListener);
-        positive_button.setText(label);
-    }
-
     /*
        public boolean attemptRegistration() {
            if (mRegistrationTask != null) {

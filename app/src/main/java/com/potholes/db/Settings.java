@@ -9,39 +9,36 @@ import android.content.Context;
 
 public final class Settings {
     public static final int ID = 0;
-    private static int RayonDetection = 3;
-    private static Boolean Camera_enabled = true;
+    public static String SERVER_IP = "192.168.43.108";
+    public static double Alert_Distance = 500;
+    private static double distance = 150.0;
     private static Boolean notification_enabled = true;
-    private static Boolean collaborate_enabled = true;
-    private static Context context;
+    private static double hauteur = 80.0;
 
-    public Settings(int rayonDetection, Boolean camera_enabled, Boolean notification_enabled, Boolean collaborate_enabled, Context context) {
-        Settings.RayonDetection = rayonDetection;
-        Settings.Camera_enabled = camera_enabled;
+    public Settings(Boolean notification_enabled, Double hauteur, Double distance, Context context) {
+        Settings.hauteur = hauteur;
+        Settings.distance = distance;
         Settings.notification_enabled = notification_enabled;
-        Settings.collaborate_enabled = collaborate_enabled;
-        Settings.context = context;
     }
 
     public Settings() {
 
     }
 
-
-    public static double getRayonDetection() {
-        return RayonDetection;
+    public static Double getDistance() {
+        return distance;
     }
 
-    public static void setRayonDetection(int rayonDetection) {
-        RayonDetection = rayonDetection;
+    public static void setDistance(Double distance) {
+        Settings.distance = distance;
     }
 
-    public static Boolean isCamera_enabled() {
-        return Camera_enabled;
+    public static Double getHauteur() {
+        return hauteur;
     }
 
-    public static void setCamera_enabled(Boolean camera_enabled) {
-        Camera_enabled = camera_enabled;
+    public static void setHauteur(Double hauteur) {
+        Settings.hauteur = hauteur;
     }
 
     public static Boolean isNotification_enabled() {
@@ -52,19 +49,11 @@ public final class Settings {
         Settings.notification_enabled = notification_enabled;
     }
 
-    public static Boolean isCollaborate_enabled() {
-        return collaborate_enabled;
-    }
-
-    public static void setCollaborate_enabled(Boolean collaborate_enabled) {
-        Settings.collaborate_enabled = collaborate_enabled;
-    }
-
     @Override
     public String toString() {
-        return "isCameraenabled" + isCamera_enabled() + "\n"
-                + "isNotification enabled" + isNotification_enabled() + "\n"
-                + "isCollaborateEnabled" + isCollaborate_enabled() + "\n"
-                + "Rayon" + getRayonDetection() + "\n";
+        return
+                "isNotification enabled" + isNotification_enabled() + "\n"
+                        + "distance" + getDistance() + "\n"
+                        + "hauteur" + getHauteur() + "\n";
     }
 }

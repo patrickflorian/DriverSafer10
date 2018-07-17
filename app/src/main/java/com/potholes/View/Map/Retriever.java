@@ -1,14 +1,13 @@
 package com.potholes.View.Map;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.potholes.db.HttpHandler;
-import com.potholes.db.Potholes;
+import com.potholes.db.Settings;
+import com.potholes.db.local.potholes.Potholes;
+import com.potholes.db.local.potholes.PotholesDB;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -21,22 +20,18 @@ import static android.content.ContentValues.TAG;
  */
 
 public class Retriever {
+    Context ct;
 
-    public void findPotholesOn(LatLng point, double rayon, GoogleMap map) {
-        new PotholesRetriever(point, rayon, map).execute();
+    public Retriever(Context ct) {
+        this.ct = ct;
+    }
+
+    public void findPotholesOn() {
+        new PotholesRetriever().execute();
     }
 
     private class PotholesRetriever extends AsyncTask<Void, Void, String> {
-        LatLng point;
-        double rayon;
-        GoogleMap googleMap;
 
-
-        public PotholesRetriever(LatLng point, double rayon, GoogleMap map) {
-            this.point = point;
-            this.rayon = rayon;
-            this.googleMap = map;
-        }
 
         @Override
         protected void onPreExecute() {
@@ -47,18 +42,13 @@ public class Retriever {
 
         @Override
         protected String doInBackground(Void... voids) {
-            if (point != null) {
                 HttpHandler sh = new HttpHandler("GET");
                 // Making a request to url and getting response
-                String url = "http://192.168.43.193/potholes/app/findPotholes.php?lat=" + point.latitude +
-                        "&lng=" + point.longitude +
-                        "&rayon=" + rayon;
+            String url = "http://" + Settings.SERVER_IP + "/potholes/app/findPotholes.php?all";
                 String jsonStr = sh.makeServiceCall(url);
                 Log.d(TAG, "Response from url: " + jsonStr);
 
                 return jsonStr;
-            }
-            return null;
         }
 
         @Override
@@ -78,9 +68,8 @@ public class Retriever {
 
                             JSONObject jsonObj = list.getJSONObject(i);
                             final Double surface = jsonObj.getDouble("surface");
-                            final Double profondeur = jsonObj.getDouble("profondeur");
                             final int pothole_id = jsonObj.getInt("id");
-                            final Boolean etat = jsonObj.getBoolean("etat");
+
 
                             //retrieve lat and long of potholes
 
@@ -88,17 +77,16 @@ public class Retriever {
                             final double lng = pos.getDouble("lng");
                             final double lat = pos.getDouble("lat");
 
+                            //Création d'une instance de ma classe PotholesDB
+                            PotholesDB potholesDB = new PotholesDB(ct);
 
-                            googleMap.addMarker(new MarkerOptions()
-                                    .position(new LatLng(lat, lng))
-                                    .title("Potholes")
-                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
-                                    .snippet("ID :" + pothole_id + "\n" +
-                                            "Surface : " + surface + "\n" +
-                                            "Profondeur : " + profondeur + "\n" +
-                                            "Etat : " + etat + "\n"
-                                    )
-                            ).setTag(new Potholes(pothole_id, lat, lng, surface, etat, profondeur));
+
+                            //On ouvre la base de données pour écrire dedans
+                            potholesDB.open();
+                            //On insère le trou que l'on vient de recuperer
+                            potholesDB.insertPotholes(new Potholes(pothole_id, lat, lng, surface));
+                            potholesDB.close();
+
                         }
 
 

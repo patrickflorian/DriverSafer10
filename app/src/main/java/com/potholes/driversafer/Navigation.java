@@ -64,8 +64,9 @@ import com.potholes.View.Map.CustomInfoWindowAdapter;
 import com.potholes.View.Map.Retriever;
 import com.potholes.View.Map.Road;
 import com.potholes.db.HttpHandler;
-import com.potholes.db.Potholes;
 import com.potholes.db.Settings;
+import com.potholes.db.local.potholes.Potholes;
+import com.potholes.db.local.potholes.PotholesDB;
 
 import java.io.IOException;
 import java.text.DateFormat;
@@ -106,7 +107,7 @@ public class Navigation extends AppCompatActivity
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private PlaceAutocompleteAdapter mPlaceAutocompleteAdapter;
     private GoogleApiClient mGoogleApiClient;
-    private Location lastLocation = null;
+    private Location lastLocation;
     private Marker mylocationMarker;
     private Location destLocation;
     private Location startLocation;
@@ -153,8 +154,7 @@ public class Navigation extends AppCompatActivity
         start_zoom_btn = findViewById(R.id.start_zoom);
         arrival_zoom_btn = findViewById(R.id.arrival_zoom);
         stop_nav_btn = findViewById(R.id.stop_nav);
-        next = findViewById(R.id.next_pothole);
-        prev = findViewById(R.id.prev_pothole);
+
 
         getLocationPermission();
 
@@ -182,8 +182,35 @@ public class Navigation extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 if (lastLocation != null) {
-                    Retriever my_pr = new Retriever();
-                    my_pr.findPotholesOn(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude()), Settings.getRayonDetection(), mMap);
+                    /*Retriever my_pr = new Retriever(getApplicationContext());
+                    my_pr.findPotholesOn(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude()),10000000.0 , mMap);*/
+                    //Création d'une instance de ma classe PotholesDB
+                    PotholesDB potholesDB = new PotholesDB(Navigation.this);
+                    //On ouvre la base de données pour écrire dedans
+                    potholesDB.open();
+                    //On insère le trou que l'on vient de recuperer
+                    List<Potholes> list = potholesDB.getPotholes();
+
+
+                    if (list != null) {
+                        Toast.makeText(Navigation.this, "pas vide", Toast.LENGTH_SHORT).show();
+
+                        for (int i = 0; i < list.size(); i++) {
+                            Potholes p = list.get(i);
+                            mMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(p.getLat(), p.getLng()))
+                                    .title("Potholes")
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                                    .snippet("ID :" + p.getId() + "\n" +
+                                            "Surface : " + p.getSurface() + "\n"
+                                    )
+                            ).setTag(p);
+                            Toast.makeText(Navigation.this, p.toString(), Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(Navigation.this, "vide", Toast.LENGTH_SHORT).show();
+                    }
+                    potholesDB.close();
                 }
             }
         });
@@ -241,12 +268,6 @@ public class Navigation extends AppCompatActivity
                     }
                 });
 
-                mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
-                    @Override
-                    public void onMapLongClick(LatLng latLng) {
-                        editPotholes(new Potholes(latLng.latitude, latLng.longitude));
-                    }
-                });
                 mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
                     @Override
                     public boolean onMarkerClick(Marker marker) {
@@ -255,6 +276,7 @@ public class Navigation extends AppCompatActivity
                     }
                 });
                 mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+
                     @Override
                     public void onMarkerDragStart(Marker marker) {
 
@@ -288,6 +310,18 @@ public class Navigation extends AppCompatActivity
                                 + "Hour : " + DateFormat.getTimeInstance().format(new Date()) + "\n")
                 );
 
+                mGps.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Log.d(TAG, "onClick: clicked gps icon");
+                        try {
+                            getDeviceLocation();
+                            mMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude())));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
 
                 BroadcastReceiver broadcastReceiverForMap = new BroadcastReceiver() {
                     @Override
@@ -299,14 +333,38 @@ public class Navigation extends AppCompatActivity
                                 + "Lng : " + String.valueOf(cur_pos.longitude) + "\n"
                                 + "Vitesse : " + lastLocation.getSpeed() + " m/s" + "\n"
                                 + "Hour : " + DateFormat.getTimeInstance().format(new Date(lastLocation.getTime())) + "\n");
-                        mMap.animateCamera(CameraUpdateFactory.newLatLng(cur_pos));
+
+
+                        //Création d'une instance de ma classe PotholesDB
+                        PotholesDB potholesDB = new PotholesDB(context);
+                        //On ouvre la base de données pour écrire dedans
+                        potholesDB.open();
+                        //On insère le trou que l'on vient de recuperer
+                        List<Potholes> list = potholesDB.getPotholes();
+                        if (list != null) {
+                            for (int j = 0; j < list.size(); j++) {
+                                Potholes p = list.get(j);
+                                float[] dist_2 = new float[2];
+                                Location.distanceBetween(lastLocation.getLatitude(), lastLocation.getLongitude(), p.getLat(), p.getLng(), dist_2);
+                                if (dist_2[0] <= Settings.Alert_Distance) {
+                                    TextView textView = findViewById(R.id.p_vitesse);
+                                    textView.setText(String.valueOf(lastLocation.getSpeed()));
+                                    LinearLayout not = findViewById(R.id.notif_area);
+                                    not.animate().translationX(0).setDuration(300);
+                                    not.animate().translationX(-800).setDuration(300).setStartDelay(1000);
+                                }
+
+                            }
+                        } else {
+                            Toast.makeText(context, "vide", Toast.LENGTH_SHORT).show();
+                        }
+                        potholesDB.close();
                     }
                 };
                 LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiverForMap,
                         new IntentFilter(GeoLocationService.LOCATION_UPDATE));
 
                 init();
-
             }
         } catch (Exception e) {
             Log.e(TAG, "onMapReady: " + e.getMessage());
@@ -403,7 +461,7 @@ public class Navigation extends AppCompatActivity
                 mSearchText.setEnabled(true);
             } else {
                 item.setTitle("Navigation");
-                if (mMap != null) mMap.clear();
+                if (mMap != null)
                 navigation_mode = true;
                 mSearchText.setVisibility(View.INVISIBLE);
                 mSearchText.setEnabled(false);
@@ -414,9 +472,14 @@ public class Navigation extends AppCompatActivity
         } else if (id == R.id.nav_manage) {
             editSettings();
         } else if (id == R.id.nav_share) {
-            unavailableModule();
+            //unavailableModule();
+            TextView textView = findViewById(R.id.p_vitesse);
+            textView.setText(String.valueOf(lastLocation.getSpeed()));
+            LinearLayout not = findViewById(R.id.notif_area);
+            not.animate().translationX(0).setDuration(200);
         } else if (id == R.id.nav_send) {
-            unavailableModule();
+            Retriever r = new Retriever(Navigation.this);
+            r.findPotholesOn();
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -491,22 +554,11 @@ public class Navigation extends AppCompatActivity
         dialogBuilder.setCancelable(true);
 
         final AlertDialog dialog = dialogBuilder.create();
-
-
-        dialogBuilder.setPositiveButtonListener("save", new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                dialog.cancel();
-                Toast.makeText(getApplication(), new Settings().toString(), Toast.LENGTH_LONG).show();
-            }
-        });
-        dialogBuilder.setNegativeButtonListener("cancel", new View.OnClickListener() {
+        dialogBuilder.setNegativeButtonListener("CLOSE", new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 dialog.dismiss();
-                Toast.makeText(getApplication(),
-                        "No button clicked", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplication(), new Settings().toString(), Toast.LENGTH_LONG).show();
             }
         });
 
@@ -580,17 +632,6 @@ public class Navigation extends AppCompatActivity
             }
         });
 
-        mGps.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(TAG, "onClick: clicked gps icon");
-                try {
-                    getDeviceLocation();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
 
         hideSoftKeyboard();
     }
@@ -802,7 +843,7 @@ public class Navigation extends AppCompatActivity
             mMap.addMarker(new MarkerOptions()
                     .draggable(true)
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_arrival))
-                    .position(new LatLng(destLocation.getLatitude() + 0.3, destLocation.getLongitude() + 0.3))
+                    .position(new LatLng(5.471352, 10.419416)) //bafoussam
                     .snippet("Your Trajet will End here")
                     .title("Arrivée")
             );
@@ -850,7 +891,6 @@ public class Navigation extends AppCompatActivity
     }
 
 
-
     private class EditPotholesTask extends AsyncTask<Void, Void, Void> {
         Potholes p;
 
@@ -863,12 +903,10 @@ public class Navigation extends AppCompatActivity
         protected Void doInBackground(Void... voids) {
             HttpHandler sh = new HttpHandler("GET");
             // Making a request to url and getting response
-            String url = "http://192.168.43.193/potholes/app/editPotholes.php?id=" + p.getId() +
+            String url = "http://" + Settings.SERVER_IP + "/potholes/app/editPotholes.php?id=" + p.getId() +
                     "&lng=" + p.getLng() +
                     "&lat=" + p.getLat() +
-                    "&surface=" + p.getSurface() +
-                    "&etat=" + p.isEtat() +
-                    "&profondeur=" + p.getProfondeur();
+                    "&surface=" + p.getSurface();
             String res = sh.makeServiceCall(url);
             if (res.contains("true")) {
                 runOnUiThread(new Runnable() {

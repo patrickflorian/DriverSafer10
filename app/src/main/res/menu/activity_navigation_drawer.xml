@@ -36,7 +36,7 @@
                 android:id="@+id/nav_send"
                 android:icon="@drawable/ic_menu_share"
                 android:iconTint="@color/colorDriverSafer_error"
-                android:title="Share MyData" />
+                android:title="Update Database" />
         </menu>
     </item>
 

@@ -28,6 +28,7 @@ public class Detector {
     public static double MIN_POTHOLES_AREA;
     public static int Max_obj = 100;
     public static boolean hasfoundPothole = false;
+    public static double surface = 0;
     private static Scalar hsvMin = new Scalar(0, 0, 0);
     private static Scalar hsvMax = new Scalar(50, 50, 250);
 
@@ -35,12 +36,8 @@ public class Detector {
     // function to extract the road part in the image
 
     private static Mat extractRoadMask(Mat input) {
-
-
         FRAME_WIDTH = input.width();
         FRAME_HEIGHT = input.height();
-
-
         Mat hsv = new Mat();
         Mat dilate_element = Imgproc.getStructuringElement(Imgproc.MORPH_DILATE, new Size(5, 5));
         Imgproc.cvtColor(input, hsv, Imgproc.COLOR_BGR2HSV);
@@ -49,15 +46,10 @@ public class Detector {
 
         Imgproc.dilate(hsv, hsv, dilate_element);
         /// fincontours of the mask
-
-
         double largest_area = 0;
         double a = 0;
         int largest_contour_index = 0;
-
-
         List<MatOfPoint> roadContours = new ArrayList<MatOfPoint>();
-
         Imgproc.findContours(hsv, roadContours, new Mat(), Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE); // Find the contours in the image
         int count = roadContours.size();
         if (count > 0) {
@@ -71,16 +63,13 @@ public class Detector {
 
             }
         }
-
         List<MatOfPoint> hullContours = new ArrayList<MatOfPoint>();
         MatOfInt hull = new MatOfInt();
-
         MatOfPoint road_contour = roadContours.get(largest_contour_index);
         Imgproc.convexHull(road_contour, hull);
         List<Point> l = new ArrayList<Point>();
         int[] intlist = hull.toArray();
         hullContours.clear();
-
         for (int i = 0; i < intlist.length; i++) {
 
             l.add(road_contour.toList().get(hull.toList().get(i)));
@@ -105,7 +94,7 @@ public class Detector {
     }
 
 
-    public static void detect(Mat frame) {
+    public static boolean detect(Mat frame) {
 
         Mat input = new Mat();
 
@@ -117,9 +106,9 @@ public class Detector {
         input.copyTo(input, mask);
 
         Imgproc.GaussianBlur(input, input, new Size(3, 3), 10);
-        // applying the canny algorithms
-
         Imgproc.cvtColor(input, input, Imgproc.COLOR_BGR2GRAY);
+
+        // applying the canny algorithms
         Imgproc.Canny(input, input, 50, 200);
 
         Mat dilate_element = Imgproc.getStructuringElement(Imgproc.MORPH_DILATE, new Size(5, 5));
@@ -128,8 +117,9 @@ public class Detector {
         Imgproc.dilate(input, input, dilate_element);
         Imgproc.dilate(input, input, dilate_element);
         Imgproc.dilate(input, input, dilate_element);
+        Imgproc.dilate(input, input, dilate_element);
 
-        //find contours:
+        //find contours: detection des contours des nids de poules
         Imgproc.findContours(input, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
         int obj_qty = contours.size();
 
@@ -148,7 +138,7 @@ public class Detector {
                     MatOfPoint2f contour2f = new MatOfPoint2f(contours.get(contourIdx).toArray());
                     double approxDistance = Imgproc.arcLength(contour2f, true) * 0.02;
 
-
+                    surface = area;
                     Imgproc.approxPolyDP(contour2f, approxCurve, approxDistance, true);
 
                     MatOfPoint points = new MatOfPoint(approxCurve.toArray());
@@ -161,5 +151,6 @@ public class Detector {
 
         }
 
+        return hasfoundPothole;
     }
 }

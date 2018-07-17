@@ -41,6 +41,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/activity_vertical_margin"
                 android:orientation="vertical">
 
                 <CheckBox
@@ -55,46 +56,50 @@
                     android:textAlignment="viewStart"
                     android:textColor="@color/colorDriverSafer_background" />
 
-                <CheckBox
-                    android:id="@+id/en_col"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:background="@drawable/white_border"
-                    android:checked="true"
-                    android:drawableRight="@drawable/ic_menu_taxi_black"
-                    android:text="enable collaboration in driving mode"
-                    android:textColor="@color/colorDriverSafer_background" />
 
-                <CheckBox
-                    android:id="@+id/en_cam"
+                <android.support.design.widget.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:background="@drawable/white_border"
-                    android:checked="true"
-                    android:drawableRight="@drawable/ic_menu_camera"
-                    android:text="enable Camera View"
-                    android:textColor="@color/colorDriverSafer_background" />
+                    android:layout_marginTop="1mm"
+                    android:background="@drawable/white_border">
 
-                <TextView
-                    android:id="@+id/textView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:drawableRight="@drawable/ic_search_black_24dp"
-                    android:text="Rayon de detection"
-                    android:textAlignment="center"
-                    android:textColor="@color/colorDriverSafer_background" />
+                    <android.support.design.widget.TextInputEditText
+                        android:id="@+id/hauteur"
+                        style="@style/Base.ThemeOverlay.AppCompat.Light"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_edit_location_black"
+                        android:hint="Hauteur camera-sol(cm)"
+                        android:inputType="numberDecimal"
+                        android:selectAllOnFocus="true"
+                        android:singleLine="true"
+                        android:text="80."
+                        android:textColor="@color/colorDriverSafer_background"
+                        android:textColorHint="@color/colorDriverSafer_background" />
 
-                <SeekBar
-                    android:id="@+id/rayon"
-                    style="@style/Widget.AppCompat.SeekBar.Discrete"
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/white_border"
-                    android:max="20"
-                    android:progress="1"
-                    android:textColor="@color/colorDriverSafer_background" />
+                    android:layout_marginTop="1mm"
+                    android:background="@drawable/white_border">
+
+                    <android.support.design.widget.TextInputEditText
+                        android:id="@+id/distance"
+                        style="@style/Base.ThemeOverlay.AppCompat.Light"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawableEnd="@drawable/ic_edit_location_black"
+                        android:hint="distance camera-sol(cm)"
+                        android:inputType="numberDecimal"
+                        android:selectAllOnFocus="true"
+                        android:singleLine="true"
+                        android:text="150"
+                        android:textColor="@color/colorDriverSafer_background"
+                        android:textColorHint="@color/colorDriverSafer_background" />
+
+                </android.support.design.widget.TextInputLayout>
 
             </LinearLayout>
 
@@ -110,24 +115,14 @@
         android:layout_below="@+id/content">
 
         <Button
-            android:id="@+id/dialog_positive_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/btn_background_transparent_success"
-            android:text="SAVE"
-            android:textColor="@color/colorDriverSafer_success" />
-
-        <Button
             android:id="@+id/dialog_negative_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@id/dialog_positive_btn"
+            android:layout_alignParentRight="true"
             android:layout_marginRight="3dp"
-            android:layout_toLeftOf="@id/dialog_positive_btn"
             android:background="@drawable/btn_background_transparent_error"
-            android:text="CANCEL"
+            android:text="CLOSE"
             android:textColor="@color/colorDriverSafer_error" />
     </RelativeLayout>
 

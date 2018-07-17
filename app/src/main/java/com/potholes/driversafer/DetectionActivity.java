@@ -2,29 +2,37 @@ package com.potholes.driversafer;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.location.Location;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.Toast;
 
 import com.potholes.View.Dialog.SimpleDialogBuilder;
-import com.potholes.db.Potholes;
+import com.potholes.db.local.potholes.Potholes;
+import com.potholes.db.local.potholes.PotholesDB;
 import com.potholes.detection.Detector;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
 public class DetectionActivity extends AppCompatActivity implements CameraBridgeViewBase.CvCameraViewListener2 {
@@ -36,6 +44,8 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
 
     private AlertDialog baterryDialog;
     private AlertDialog potholeDialog;
+
+    private Intent intent;
 
     private BaseLoaderCallback baseLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -53,8 +63,16 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
 
     };
     private Mat imageMAt;
+    private boolean editIsShowwing = false;
+    private Location lastLocation;
 
-
+    BroadcastReceiver broadcastReceiverForDetection = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            lastLocation = intent.getParcelableExtra(GeoLocationService.LOCATION_DATA);
+            Toast.makeText(context, lastLocation.toString(), Toast.LENGTH_SHORT).show();
+        }
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,6 +89,12 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
         cameraBridgeViewBase.setCvCameraViewListener(this);
 
         checkBatteryLevel();
+        GeoLocationService.activity = DetectionActivity.this;
+
+        GeoLocationService.start(this);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiverForDetection,
+                new IntentFilter(GeoLocationService.LOCATION_UPDATE));
 
     }
 
@@ -101,12 +125,20 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
         });
     }
 
-    private void showEditBar() {
-        Intent intent = new Intent(DetectionActivity.this, EditActivity.class);
-        intent.putExtra("trou", new Potholes(0, 0, 25.6, true, 225));
-        startActivity(intent);
-    }
 
+    private Bitmap convertMatToBitMap(Mat img) {
+
+        Bitmap bmp = Bitmap.createBitmap(img.cols(), img.rows(), Bitmap.Config.ARGB_8888);
+
+        try {
+
+            Utils.matToBitmap(img, bmp);
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+        return bmp;
+    }
     private int getBatteryLevel() {
         int batteryLevel = -1;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -135,6 +167,7 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
     @Override
     protected void onResume() {
         super.onResume();
+        Detector.hasfoundPothole = false;
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "OpenCV library not loaded");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_1_0, this, baseLoaderCallback);
@@ -142,22 +175,31 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
             Log.d(TAG, "OpenCV loaded successfully");
             baseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
+
+        GeoLocationService.activity = DetectionActivity.this;
+        GeoLocationService.start(this);
+        LocalBroadcastManager.getInstance(this).registerReceiver(broadcastReceiverForDetection,
+                new IntentFilter(GeoLocationService.LOCATION_UPDATE));
+
     }
 
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverForDetection);
+        GeoLocationService.stop(this);
+        super.onPause();
+    }
 
     @Override
     public void onCameraViewStarted(int width, int height) {
         Detector.MIN_POTHOLES_AREA = 50 * 25;
         Detector.Max_obj = 10;
+
     }
 
     @Override
     public void onCameraViewStopped() {
-        try {
-            showEditBar();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
     }
 
     @Override
@@ -166,15 +208,52 @@ public class DetectionActivity extends AppCompatActivity implements CameraBridge
         Detector.FRAME_HEIGHT = mFinalMat.height();
         Detector.FRAME_WIDTH = mFinalMat.width();
         Detector.MAX_POTHOLES_AREA = (Detector.FRAME_HEIGHT / 4) * (Detector.FRAME_WIDTH / 4);
-        if (!Detector.hasfoundPothole) {
-            Detector.detect(mFinalMat);
-        } else {
-            cameraBridgeViewBase.disableView();
+        if (Detector.detect(mFinalMat)) {
+            try {
+                //if(!editIsShowwing){
+                intent = new Intent(DetectionActivity.this, EditActivity.class);
+                Potholes p = new Potholes(5.3491364, 10.423561, Detector.surface);
+
+                //Création d'une instance de ma classe PotholesDB
+                PotholesDB potholesDB = new PotholesDB(this);
+
+
+                //On ouvre la base de données pour écrire dedans
+                potholesDB.open();
+                //On insère le trou que l'on vient de créer
+                long result = potholesDB.insertPotholes(p);
+                if (result != -1)
+                    Log.d(TAG, "Adding potholes :: New row added, row id: " + result);
+                else
+                    Log.d(TAG, " Adding potholes : Something wrong");
+                potholesDB.close();
+
+                // intent.putExtra("trou", p);
+//                intent.putExtra("img",convertMatToBitMap(mFinalMat));
+//                startActivityForResult(intent, 2);
+//                editIsShowwing = true;
+                //}
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            }
         }
 
         imageMAt = mFinalMat.clone();
         return mFinalMat;
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        // check if the request code is same as what is passed  here it is 2
+        if (requestCode == 2) {
+            String message = data.getStringExtra("MESSAGE");
+            if (message.equals("success"))
+                Toast.makeText(this, "Saved success fully", Toast.LENGTH_SHORT).show();
+            else Toast.makeText(this, "failed to save", Toast.LENGTH_SHORT).show();
+        }
+        editIsShowwing = false;
     }
 
 
